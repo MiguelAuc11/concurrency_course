@@ -50,12 +50,32 @@ Future<Iterable<Person>> parseJson(url) => HttpClient()
   .then((str) => json.decode(str) as List<dynamic>)
   .then((json) => json.map((e) => Person.fromJson(e)));
 
+extension EmptyOnError<E> on Future<List<Iterable<E>>> {
+  Future<List<Iterable<E>>> emptyOnError() => catchError(
+    (_, __) => List<Iterable<E>>.empty(),
+  );
+} 
+
+extension EmptyOnErrorOnFuture<E> on Future<Iterable<E>> {
+  Future<Iterable<E>> emptyOnError() => catchError(
+    (_, __) => Iterable<E>.empty(),
+  );
+} 
+
+Stream<Iterable<Person>> getPersons() async* {
+  for (final url in Iterable.generate(
+    2,
+    (i) => 'http://127.0.0.1:5500/apis/people.json'
+  )) {
+    yield await parseJson(url);
+  }
+} 
+
+
 void testIt() async {
-  final persons = await Future.wait([
-    parseJson(people1Url),/// .catchError((_, __) => Iterable<Person>.empty()),
-    parseJson(people2Url)
-  ]).catchError((_, __) => Iterable<Person>.empty()); /// forma 2 para capturar errores  // pueden denominarse individualmente o en bloque de varios llamados
-  persons.log();
+  await for (final persons in getPersons()) {
+    persons.log();
+  }
 }
 
 class HomePage extends StatelessWidget {
