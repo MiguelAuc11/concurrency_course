@@ -40,17 +40,21 @@ class Person{
 
 }
 
-const url = 'http://127.0.0.1:5500/apis/people.json';
+const people1Url = 'http://127.0.0.1:5500/apis/people.json';
+const people2Url = 'http://127.0.0.1:5500/apis/people2.json';
 
-Future<Iterable<Person>> parseJson() => HttpClient()
+Future<Iterable<Person>> parseJson(url) => HttpClient()
   .getUrl(Uri.parse(url))
   .then((req) => req.close())
   .then((resp) => resp.transform(utf8.decoder).join())
   .then((str) => json.decode(str) as List<dynamic>)
   .then((json) => json.map((e) => Person.fromJson(e)));
 
-void testIt() {
-  final persons = parseJson();
+void testIt() async {
+  final persons = await Future.wait([
+    parseJson(people1Url),/// .catchError((_, __) => Iterable<Person>.empty()),
+    parseJson(people2Url)
+  ]).catchError((_, __) => Iterable<Person>.empty()); /// forma 2 para capturar errores  // pueden denominarse individualmente o en bloque de varios llamados
   persons.log();
 }
 
